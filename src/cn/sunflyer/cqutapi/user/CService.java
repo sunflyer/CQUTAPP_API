@@ -175,4 +175,46 @@ public class CService {
 		
 		return null;
 	}
+	
+	public BookRecord[] getBookRecord(int page , int size){
+		return this.getBookRecord(gUser.getUsername(), 1, 20);
+	}
+	
+	public BookRecord[] getBookRecord(String userid , int page , int size){
+		HttpResponse bookResp = this.route(20150111);
+		if(bookResp  != null){
+			HttpResponse realResp = HttpUtil.post("http://" + bookResp.getHost() + "/MV/books/list.action?userid=" + userid + "&pagesize=" + size + "&nowpage=" + page , "");
+			if(realResp != null){
+				String response = HttpUtil.getResponse(realResp);
+				if(response.startsWith("\"")){
+					response = response.substring(1 , response.length() - 1).replace("\\\"", "\"");
+				}
+				JsonReader jr = Json.createReader(new StringReader(response));
+				JsonArray resultArray = jr.readArray();
+				
+				BookRecord[] resultData = new BookRecord[resultArray.size()];
+				
+				JsonValue jv = null;
+				JsonObject jo = null;
+				for(int i = 0 ; i < resultData.length ; i++){
+				
+					jv = resultArray.get(i);
+					if(jv.getValueType() == ValueType.OBJECT){
+						jo = (JsonObject)jv;
+						resultData[i] = new BookRecord(
+								jo.getString("BOOK_NUM"),
+								jo.getString("BOOK_NAME"),
+								jo.getString("BOOK_DATE"),
+								jo.getString("BOOK_BACKDATE"),
+								Integer.parseInt(jo.getString("BOOK_XJCS"))
+								);
+					}
+					
+				}
+				
+				return resultData;
+			}
+		}
+		return null;
+	}
 }
